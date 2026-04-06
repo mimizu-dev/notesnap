@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NoteSnap</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <!-- Compact Top Bar -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <button id="btn-new-note" class="icon-btn" title="New note">✏️</button>
+      <button id="btn-capture" class="icon-btn" title="Capture screenshot">📸</button>
+      <button id="btn-voice" class="icon-btn" title="Voice note">🎤</button>
+    </div>
+    <button id="btn-change-doc" class="folder-chip" title="Select vault folder">
+      <span>📁</span>
+      <span id="doc-name" class="folder-chip-name">No folder</span>
+    </button>
+    <div class="top-bar-right">
+      <!-- Chain link icon: connected = linked, disconnected = gap (no middle bar) -->
+      <button id="btn-auth" class="icon-btn conn-btn" title="Connect to Obsidian">
+        <svg class="conn-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <!-- Left and right chain rings (always shown) -->
+          <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1z
+                   M17 7h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+          <!-- Middle bar: only shown when connected — hides it to show chain gap when disconnected -->
+          <path class="conn-link-bar" d="M8 13h8v-2H8v2"/>
+        </svg>
+      </button>
+      <div class="sync-wrapper">
+        <!-- Circular arrows sync icon (Material Design style) -->
+        <button id="btn-sync" class="icon-btn sync-btn" title="Sync now" disabled>
+          <svg class="sync-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+          </svg>
+        </button>
+        <span id="pending-count" class="sync-badge" style="display:none;">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-btn-list">Notes</button>
+    <button class="tab-btn" id="tab-btn-editor">Editor</button>
+  </div>
+
+  <!-- Main Area -->
+  <div class="main-area">
+    <!-- Notes List Panel -->
+    <div id="panel-list" class="tab-panel">
+      <div class="search-bar">
+        <input type="text" id="search-input" class="search-input" placeholder="Search notes..." />
+        <select id="filter-select" class="filter-select">
+          <option value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="synced">Synced</option>
+          <option value="withImages">With Images</option>
+        </select>
+      </div>
+      <div id="notes-container" class="notes-container">
+        <div id="empty-state" class="empty-state">
+          <div class="empty-icon">📝</div>
+          <h2>No notes yet</h2>
+          <p>Click ✏️ to get started</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Editor Panel -->
+    <div id="panel-editor" class="tab-panel hidden">
+      <div class="editor-title-bar">
+        <input id="editor-title" class="editor-title-input" placeholder="Note title..." />
+      </div>
+      <div class="format-toolbar">
+        <button class="fmt-btn" data-fmt="h1" title="Heading 1 (#)">H1</button>
+        <button class="fmt-btn" data-fmt="h2" title="Heading 2 (##)">H2</button>
+        <button class="fmt-btn" data-fmt="h3" title="Heading 3 (###)">H3</button>
+        <button class="fmt-btn" data-fmt="h4" title="Heading 4 (####)">H4</button>
+        <span class="fmt-divider"></span>
+        <button class="fmt-btn fmt-bold" data-fmt="bold" title="Bold (**text**)">B</button>
+        <button class="fmt-btn fmt-italic" data-fmt="italic" title="Italic (*text*)">I</button>
+        <button class="fmt-btn fmt-strike" data-fmt="strikethrough" title="Strikethrough (~~text~~)">S</button>
+        <button class="fmt-btn fmt-mono" data-fmt="code" title="Inline code">``</button>
+        <span class="fmt-divider"></span>
+        <button class="fmt-btn" data-fmt="bullet" title="Bullet list (-)">• List</button>
+        <button class="fmt-btn" data-fmt="numbered" title="Numbered list">1. List</button>
+        <button class="fmt-btn" data-fmt="checkbox" title="Checkbox (- [ ])">☐ Todo</button>
+        <span class="fmt-divider"></span>
+        <button class="fmt-btn" data-fmt="quote" title="Blockquote (>)">❝ Quote</button>
+        <button class="fmt-btn fmt-mono" data-fmt="codeblock" title="Code block (```)">{ }</button>
+        <span class="fmt-divider"></span>
+        <button class="fmt-btn" data-fmt="hr" title="Horizontal rule (---)">—</button>
+      </div>
+      <div id="editor-content" class="editor-content" contenteditable="true" spellcheck="true" data-placeholder="Start writing… use toolbar above for formatting, 📸 to capture, 🎤 for voice"></div>
+      <div class="editor-footer">
+        <button id="btn-discard" class="btn btn-secondary">Discard</button>
+        <button id="btn-save-note" class="btn btn-primary">Save Note</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div id="loading" class="loading" style="display: none;">
+    <div class="spinner"></div>
+    <span>Loading...</span>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Document Selection Modal -->
+  <div id="doc-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Select Vault Folder</h2>
+        <button id="doc-modal-close" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="new-doc-title">Folder path in vault:</label>
+          <div class="doc-create-row">
+            <input type="text" id="new-doc-title" class="form-control" placeholder="e.g. Video Notes" />
+            <button id="btn-create-doc" class="btn btn-primary">Set</button>
+          </div>
+          <p style="font-size:11px;color:#5f6368;margin-top:4px;">The folder will be created automatically on first sync.</p>
+        </div>
+        <div class="form-group">
+          <label>Existing folders in vault:</label>
+          <div id="doc-list-loading" class="doc-list-loading" style="display: none;">Loading folders...</div>
+          <div id="doc-list" class="doc-list"></div>
+          <div id="doc-list-empty" class="doc-list-empty" style="display: none;">No folders found. Make sure Obsidian is running.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="doc-cancel" class="btn btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice Recording Modal -->
+  <div id="voice-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Record Voice Note</h2>
+        <button id="voice-modal-close" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="voice-status" class="voice-status">
+          <div id="voice-indicator" class="voice-indicator"></div>
+          <span id="voice-status-text">Click the microphone to start recording</span>
+        </div>
+        <div class="form-group">
+          <label>Live Transcript:</label>
+          <div id="voice-transcript" class="voice-transcript">
+            <div id="voice-final-transcript" class="voice-final"></div>
+            <div id="voice-interim-transcript" class="voice-interim"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="voice-language">Language:</label>
+          <select id="voice-language" class="form-control">
+            <option value="en-US">English (US)</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="zh-CN">中文 (普通话/Mandarin)</option>
+            <option value="zh-TW">中文 (台灣/Traditional)</option>
+            <option value="zh-HK">中文 (香港/Cantonese)</option>
+            <option value="ja-JP">日本語 (Japanese)</option>
+            <option value="ko-KR">한국어 (Korean)</option>
+            <option value="es-ES">Español (Spanish)</option>
+            <option value="fr-FR">Français (French)</option>
+            <option value="de-DE">Deutsch (German)</option>
+          </select>
+        </div>
+        <div id="voice-not-supported" class="voice-warning" style="display: none;">
+          ⚠️ Voice recording is not supported in this browser.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="voice-cancel" class="btn btn-secondary">Cancel</button>
+        <button id="voice-record" class="btn btn-primary">
+          <span id="voice-record-icon">🎤</span>
+          <span id="voice-record-text">Start Recording</span>
+        </button>
+        <button id="voice-save" class="btn btn-primary" style="display: none;">
+          Add to Note
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Obsidian Configuration Modal -->
+  <div id="obsidian-config-modal" class="modal" style="display: none;">
+    <div class="modal-content obsidian-config-content">
+      <div class="modal-header">
+        <div class="modal-header-inner">
+          <span id="obsidian-step-indicator" class="step-indicator">Step 1 of 2</span>
+          <h2 id="obsidian-modal-title">Connect to Obsidian</h2>
+        </div>
+        <button id="obsidian-config-close" class="btn-close">&times;</button>
+      </div>
+
+      <!-- Step 1: Install guide -->
+      <div id="obsidian-step-1" class="modal-body setup-guide">
+        <p class="setup-intro">
+          This extension saves notes into your Obsidian vault using the
+          <strong>Local REST API</strong> community plugin.
+        </p>
+        <ol class="setup-steps-list">
+          <li>
+            <span class="step-num">1</span>
+            <div class="step-body">
+              Open <strong>Obsidian</strong> → <code>Settings → Community plugins</code><br>
+              Turn off <em>Restricted mode</em>, click <strong>Browse</strong>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <div class="step-body">
+              Search <strong>Local REST API</strong> → <strong>Install</strong> → <strong>Enable</strong>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <div class="step-body">
+              Go to <code>Settings → Local REST API</code> to find the URL and <strong>API Key</strong>:
+              <div class="url-option">
+                <strong>HTTP</strong> <code>http://127.0.0.1:27123</code>
+                <p>Enable it in Obsidian → Settings → Local REST API → "Enable Non-encrypted (HTTP) Server".</p>
+              </div>
+              Copy either URL and the API Key, then click next.
+            </div>
+          </li>
+        </ol>
+        <div class="setup-note">
+          ⚠️ Keep Obsidian open whenever you sync. To use a different vault, just switch vaults in Obsidian.
+        </div>
+      </div>
+      <div id="obsidian-footer-1" class="modal-footer">
+        <button id="obsidian-config-cancel" class="btn btn-secondary">Cancel</button>
+        <button id="obsidian-step-next" class="btn btn-primary">I have the API Key →</button>
+      </div>
+
+      <!-- Step 2: API configuration + test -->
+      <div id="obsidian-step-2" class="modal-body" style="display:none;">
+        <div class="form-group">
+          <label for="obsidian-url-input">API URL</label>
+          <input type="text" id="obsidian-url-input" class="form-control" placeholder="http://localhost:27123" />
+          <p class="form-hint">Default port is 27123 — shown in Settings → Local REST API.</p>
+        </div>
+        <div class="form-group">
+          <label for="obsidian-key-input">API Key</label>
+          <input type="password" id="obsidian-key-input" class="form-control" placeholder="Paste the key from the plugin settings" />
+        </div>
+        <div class="form-group">
+          <label for="obsidian-vault-input">
+            Vault Name
+            <span class="label-optional">(for "Open in Obsidian" links)</span>
+          </label>
+          <input type="text" id="obsidian-vault-input" class="form-control" placeholder="e.g. My Vault" />
+          <p class="form-hint">
+            The name of your Obsidian vault — shown in its title bar or when you switch vaults.<br>
+            To use a different vault, just open it in Obsidian before syncing.
+          </p>
+        </div>
+        <div id="obsidian-test-result" class="connection-result" style="display:none;"></div>
+      </div>
+      <div id="obsidian-footer-2" class="modal-footer" style="display:none;">
+        <button id="obsidian-step-back" class="btn btn-secondary">← Back</button>
+        <button id="obsidian-config-test" class="btn btn-secondary">Test Connection</button>
+        <button id="obsidian-config-save" class="btn btn-primary">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
